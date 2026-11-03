@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skycast Weather</title>
+<style>
+:root{--text:#fff;--card:rgba(255,255,255,.16);--line:rgba(255,255,255,.28);--bg1:#4a90d9;--bg2:#9cc8f0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--card:rgba(0,0,0,.28);--line:rgba(255,255,255,.18)}}
+:root[data-theme="dark"]{--card:rgba(0,0,0,.28);--line:rgba(255,255,255,.18)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);background:linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed;transition:background 1s;overflow-x:hidden}
+body[data-kind=clear]{--bg1:#2b7fd6;--bg2:#8fd0ff}
+body[data-kind=cloud]{--bg1:#5d7186;--bg2:#a9b9c9}
+body[data-kind=rain]{--bg1:#2f3e52;--bg2:#6a7f96}
+body[data-kind=storm]{--bg1:#1d2233;--bg2:#4b4f6b}
+body[data-kind=snow]{--bg1:#6f8fb0;--bg2:#d7e4f2}
+body[data-kind=fog]{--bg1:#7a8791;--bg2:#c3cbd1}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body[data-kind=clear]{--bg1:#0f3a73;--bg2:#2c6aa8}}
+#fx{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.sun{position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,#fff6b0 0%,#ffd84a 45%,rgba(255,216,74,0) 70%);animation:pulse 5s ease-in-out infinite}
+.cloud{position:absolute;width:180px;height:56px;background:rgba(255,255,255,.55);border-radius:60px;filter:blur(2px);animation:drift linear infinite}
+.cloud::before,.cloud::after{content:"";position:absolute;background:inherit;border-radius:50%}
+.cloud::before{width:80px;height:80px;top:-36px;left:24px}
+.cloud::after{width:60px;height:60px;top:-24px;left:92px}
+.drop{position:absolute;top:-30px;width:2px;height:22px;background:linear-gradient(transparent,rgba(190,220,255,.9));animation:fall linear infinite}
+.flake{position:absolute;top:-10px;width:8px;height:8px;border-radius:50%;background:#fff;opacity:.85;animation:snow linear infinite}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;animation:flash 7s infinite}
+@keyframes pulse{50%{transform:scale(1.12);opacity:.85}}
+@keyframes drift{from{transform:translateX(-260px)}to{transform:translateX(110vw)}}
+@keyframes fall{to{transform:translateY(110vh) translateX(-30px)}}
+@keyframes snow{to{transform:translateY(110vh) translateX(40px)}}
+@keyframes flash{0%,92%,96%,100%{opacity:0}93%{opacity:.55}94%{opacity:.1}95%{opacity:.45}}
+main{position:relative;max-width:920px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.1rem;margin:0 0 14px;letter-spacing:.04em;font-weight:600}
+.bar{display:flex;gap:8px;position:relative}
+input{flex:1;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:1rem;backdrop-filter:blur(10px);outline:none}
+input::placeholder{color:rgba(255,255,255,.7)}
+input:focus{border-color:#fff}
+button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:14px;padding:0 16px;font-size:1rem;cursor:pointer;backdrop-filter:blur(10px)}
+button:hover{background:rgba(255,255,255,.28)}
+#sugg{position:absolute;top:56px;left:0;right:64px;background:#1f2b3a;border-radius:14px;overflow:hidden;z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#sugg div{padding:11px 16px;cursor:pointer;font-size:.95rem}
+#sugg div:hover{background:#2e4056}
+#sugg small{opacity:.65}
+.panel{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:24px;backdrop-filter:blur(14px);animation:rise .7s both}
+.now{display:flex;flex-wrap:wrap;align-items:center;gap:20px;justify-content:space-between}
+.city{font-size:1.6rem;font-weight:600}
+.desc{opacity:.9;margin-top:4px}
+.temp{font-size:4.5rem;font-weight:200;line-height:1}
+.big{font-size:5rem;animation:float 4s ease-in-out infinite}
+.stats{display:flex;gap:22px;margin-top:18px;flex-wrap:wrap;font-size:.9rem;opacity:.95}
+.stats b{display:block;font-size:1.05rem}
+.badge{display:inline-block;margin-top:10px;font-size:.75rem;padding:4px 10px;border-radius:99px;background:rgba(0,0,0,.3)}
+h2{font-size:1rem;margin:26px 0 10px;font-weight:600}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+.day{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 6px;text-align:center;backdrop-filter:blur(10px);animation:rise .6s both;transition:transform .25s}
+.day:hover{transform:translateY(-6px)}
+.day .ic{font-size:2rem;margin:8px 0;display:inline-block;animation:float 3.5s ease-in-out infinite}
+.day .n{font-weight:600;font-size:.9rem}
+.day .hi{font-weight:600}
+.day .lo{opacity:.7}
+.day .p{font-size:.75rem;opacity:.85;margin-top:4px}
+.bar2{height:4px;border-radius:4px;background:rgba(255,255,255,.25);margin:8px 10px 0;overflow:hidden}
+.bar2 i{display:block;height:100%;background:#fff;border-radius:4px;transform-origin:left;animation:grow 1s .5s both}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}}
+@keyframes float{50%{transform:translateY(-8px)}}
+@keyframes grow{from{transform:scaleX(0)}}
+@media (max-width:700px){.week{grid-template-columns:repeat(4,1fr)}.temp{font-size:3.5rem}}
+@media (max-width:420px){.week{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body data-kind="clear">
+<div id="fx"></div>
+<main>
+  <h1>☁️ SKYCAST</h1>
+  <div class="bar">
+    <input id="q" placeholder="Search a city…" autocomplete="off" aria-label="Search city">
+    <button id="go">Search</button>
+    <button id="unit" title="Toggle unit">°C</button>
+    <div id="sugg" hidden></div>
+  </div>
+  <div id="out"></div>
+</main>
+<script>
+const CITIES=[["Berlin","Germany",52.52,13.41],["London","United Kingdom",51.51,-0.13],["Paris","France",48.85,2.35],["New York","United States",40.71,-74.01],["Tokyo","Japan",35.68,139.69],["Sydney","Australia",-33.87,151.21],["Dubai","UAE",25.2,55.27],["Mumbai","India",19.08,72.88],["Cairo","Egypt",30.04,31.24],["Rio de Janeiro","Brazil",-22.91,-43.17],["Reykjavik","Iceland",64.15,-21.94],["Singapore","Singapore",1.35,103.82],["Toronto","Canada",43.65,-79.38],["Moscow","Russia",55.76,37.62],["Cape Town","South Africa",-33.92,18.42],["Mexico City","Mexico",19.43,-99.13]];
+const WMO=c=>c===0?["Clear sky","☀️","clear"]:c<3?["Partly cloudy","⛅","cloud"]:c===3?["Overcast","☁️","cloud"]:c<50?["Foggy","🌫️","fog"]:c<60?["Drizzle","🌦️","rain"]:c<70?["Rain","🌧️","rain"]:c<80?["Snow","❄️","snow"]:c<85?["Rain showers","🌧️","rain"]:c<90?["Snow showers","🌨️","snow"]:["Thunderstorm","⛈️","storm"];
+let F=false,cur=null;
+const $=s=>document.querySelector(s);
+const t=c=>Math.round(F?c*9/5+32:c);
+const U=()=>F?"°F":"°C";
+
+/* ---------- background animation ---------- */
+function fx(kind){
+  const el=$("#fx");el.innerHTML="";document.body.dataset.kind=kind;
+  const add=(c,st)=>{const d=document.createElement("div");d.className=c;Object.assign(d.style,st);el.appendChild(d)};
+  const r=(a,b)=>a+Math.random()*(b-a);
+  if(kind==="clear")add("sun",{});
+  const clouds={clear:2,cloud:6,rain:5,storm:6,snow:4,fog:7}[kind];
+  for(let i=0;i<clouds;i++)add("cloud",{top:r(2,45)+"vh",animationDuration:r(40,90)+"s",animationDelay:-r(0,80)+"s",opacity:kind==="storm"||kind==="rain"?.35:.55,transform:"scale("+r(.8,1.6)+")"});
+  if(kind==="rain"||kind==="storm")for(let i=0;i<80;i++)add("drop",{left:r(0,100)+"vw",animationDuration:r(.5,1.1)+"s",animationDelay:-r(0,2)+"s"});
+  if(kind==="snow")for(let i=0;i<50;i++)add("flake",{left:r(0,100)+"vw",animationDuration:r(5,11)+"s",animationDelay:-r(0,10)+"s",width:r(4,9)+"px",height:r(4,9)+"px"});
+  if(kind==="storm")add("flash",{});
+}
+
+/* ---------- data ---------- */
+function demo(c){
+  let s=0;for(const ch of c.name)s=(s*31+ch.charCodeAt(0))>>>0;
+  const rnd=()=>(s=(s*1664525+1013904223)>>>0)/4294967296;
+  const base=30-Math.abs(c.lat)*.5+(c.lat>0?0:2);
+  const codes=[0,1,2,3,3,45,53,61,63,71,80,95];
+  const pick=()=>codes[Math.floor(rnd()*codes.length)];
+  const days=[],now=new Date();
+  for(let i=0;i<7;i++){
+    const d=new Date(now);d.setDate(now.getDate()+i);
+    const code=pick(),hi=base+rnd()*6-3,lo=hi-5-rnd()*4;
+    days.push({date:d,code,hi,lo,pop:code>=51?Math.round(50+rnd()*45):Math.round(rnd()*25)});
+  }
+  return{name:c.name,country:c.country,demo:true,temp:days[0].hi-2,feels:days[0].hi-3,hum:Math.round(40+rnd()*45),wind:Math.round(6+rnd()*22),code:days[0].code,days};
+}
+async function live(c){
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon??c.lng}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`;
+  const r=await fetch(u);if(!r.ok)throw 0;const j=await r.json();
+  return{name:c.name,country:c.country,demo:false,temp:j.current.temperature_2m,feels:j.current.apparent_temperature,hum:j.current.relative_humidity_2m,wind:Math.round(j.current.wind_speed_10m),code:j.current.weather_code,
+    days:j.daily.time.map((d,i)=>({date:new Date(d+"T12:00"),code:j.daily.weather_code[i],hi:j.daily.temperature_2m_max[i],lo:j.daily.temperature_2m_min[i],pop:j.daily.precipitation_probability_max[i]??0}))};
+}
+async function load(c){
+  $("#sugg").hidden=true;
+  try{cur=await live(c)}catch(e){cur=demo(c)}
+  render();
+}
+
+/* ---------- render ---------- */
+function render(){
+  if(!cur)return;
+  const [d,ic,kind]=WMO(cur.code);fx(kind);
+  const all=cur.days,min=Math.min(...all.map(x=>x.lo)),max=Math.max(...all.map(x=>x.hi));
+  $("#out").innerHTML=`
+  <section class="panel">
+    <div class="now">
+      <div><div class="city"></div><div class="desc">${d}</div><span class="badge">${cur.demo?"Demo data (live feed unavailable here)":"Live data · Open-Meteo"}</span></div>
+      <div style="display:flex;align-items:center;gap:16px"><span class="big">${ic}</span><span class="temp">${t(cur.temp)}${U()}</span></div>
+    </div>
+    <div class="stats"><div>Feels like<b>${t(cur.feels)}${U()}</b></div><div>Humidity<b>${cur.hum}%</b></div><div>Wind<b>${cur.wind} km/h</b></div></div>
+    <h2>7-day forecast</h2>
+    <div class="week">${all.map((x,i)=>{const w=WMO(x.code);const l=(x.lo-min)/(max-min||1)*60,wd=Math.max(15,(x.hi-x.lo)/(max-min||1)*100);
+      return`<div class="day" style="animation-delay:${i*.09+.2}s"><div class="n">${i?x.date.toLocaleDateString("en-US",{weekday:"short"}):"Today"}</div><div class="ic" style="animation-delay:${i*.3}s">${w[1]}</div><div class="hi">${t(x.hi)}°</div><div class="lo">${t(x.lo)}°</div><div class="bar2"><i style="width:${wd}%;margin-left:${l}%"></i></div><div class="p">💧 ${x.pop}%</div></div>`}).join("")}</div>
+  </section>`;
+  $(".city").textContent=cur.name+(cur.country?", "+cur.country:"");
+  $("#unit").textContent=U();
+}
+
+/* ---------- search ---------- */
+let tm;
+$("#q").addEventListener("input",e=>{
+  clearTimeout(tm);const v=e.target.value.trim();
+  if(v.length<2){$("#sugg").hidden=true;return}
+  tm=setTimeout(()=>suggest(v),250);
+});
+async function suggest(v){
+  let res=CITIES.filter(c=>c[0].toLowerCase().includes(v.toLowerCase())).map(c=>({name:c[0],country:c[1],lat:c[2],lon:c[3]}));
+  try{
+    const r=await fetch("https://geocoding-api.open-meteo.com/v1/search?count=5&name="+encodeURIComponent(v));
+    const j=await r.json();
+    (j.results||[]).forEach(x=>{if(!res.some(y=>y.name===x.name&&y.country===x.country))res.push({name:x.name,country:x.country||"",lat:x.latitude,lon:x.longitude})});
+  }catch(e){}
+  const box=$("#sugg");box.innerHTML="";
+  res.slice(0,6).forEach(c=>{const d=document.createElement("div");d.textContent=c.name+" ";const s=document.createElement("small");s.textContent=c.country;d.appendChild(s);d.onclick=()=>{$("#q").value=c.name;load(c)};box.appendChild(d)});
+  box.hidden=!res.length;
+}
+async function submit(){
+  const v=$("#q").value.trim();if(!v)return;
+  const loc=CITIES.find(c=>c[0].toLowerCase()===v.toLowerCase())||CITIES.find(c=>c[0].toLowerCase().startsWith(v.toLowerCase()));
+  if(loc)return load({name:loc[0],country:loc[1],lat:loc[2],lon:loc[3]});
+  try{
+    const j=await(await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&name="+encodeURIComponent(v))).json();
+    if(j.results&&j.results[0]){const x=j.results[0];return load({name:x.name,country:x.country||"",lat:x.latitude,lon:x.longitude})}
+  }catch(e){}
+  $("#sugg").innerHTML="<div>City not found in the demo list. Try Tokyo, Paris or Sydney.</div>";$("#sugg").hidden=false;
+}
+$("#go").onclick=submit;
+$("#q").addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+document.addEventListener("click",e=>{if(!e.target.closest(".bar"))$("#sugg").hidden=true});
+$("#unit").onclick=()=>{F=!F;render()};
+load({name:"Berlin",country:"Germany",lat:52.52,lon:13.41});
+</script>
+</body>
+</html>
