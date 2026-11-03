@@ -10,7 +10,7 @@
 :root[data-theme="dark"]{--card:rgba(0,0,0,.28);--line:rgba(255,255,255,.18)}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);background:linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed;transition:background 1s;overflow-x:hidden}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);background:linear-gradient(160deg,var(--bg1),var(--bg2));min-height:100dvh;transition:background 1s;overflow-x:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-text-size-adjust:100%}
 body[data-kind=clear]{--bg1:#2b7fd6;--bg2:#8fd0ff}
 body[data-kind=cloud]{--bg1:#5d7186;--bg2:#a9b9c9}
 body[data-kind=rain]{--bg1:#2f3e52;--bg2:#6a7f96}
@@ -34,7 +34,8 @@ body[data-kind=fog]{--bg1:#7a8791;--bg2:#c3cbd1}
 @keyframes flash{0%,92%,96%,100%{opacity:0}93%{opacity:.55}94%{opacity:.1}95%{opacity:.45}}
 main{position:relative;max-width:920px;margin:0 auto;padding:24px 16px 48px}
 h1{font-size:1.1rem;margin:0 0 14px;letter-spacing:.04em;font-weight:600}
-.bar{display:flex;gap:8px;position:relative}
+.bar{display:flex;gap:8px;position:sticky;top:8px;z-index:6}
+button{min-width:48px;min-height:48px}
 input{flex:1;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:1rem;backdrop-filter:blur(10px);outline:none}
 input::placeholder{color:rgba(255,255,255,.7)}
 input:focus{border-color:#fff}
@@ -67,8 +68,24 @@ h2{font-size:1rem;margin:26px 0 10px;font-weight:600}
 @keyframes rise{from{opacity:0;transform:translateY(24px)}}
 @keyframes float{50%{transform:translateY(-8px)}}
 @keyframes grow{from{transform:scaleX(0)}}
-@media (max-width:700px){.week{grid-template-columns:repeat(4,1fr)}.temp{font-size:3.5rem}}
-@media (max-width:420px){.week{grid-template-columns:repeat(2,1fr)}}
+@media (hover:none){.day:hover{transform:none}button:hover{background:var(--card)}}
+@media (max-width:700px){
+ main{padding:14px 12px 32px}
+ .panel{padding:18px;border-radius:22px;margin-top:14px}
+ .now{justify-content:center;text-align:center;gap:6px}
+ .now>div:first-child{width:100%}
+ .now>div:last-child{width:100%;justify-content:center}
+ .temp{font-size:3.6rem}.big{font-size:3.6rem}
+ .city{font-size:1.4rem}
+ .stats{justify-content:space-between;gap:10px}
+ .stats>div{flex:1;text-align:center}
+ .week{grid-template-columns:1fr;gap:8px}
+ .day{display:grid;grid-template-columns:54px 36px 32px 1fr 32px 56px;align-items:center;gap:8px;text-align:left;padding:8px 14px;border-radius:16px;min-height:52px}
+ .day .ic{font-size:1.6rem;margin:0;justify-self:center}
+ .day .n{order:1}.day .ic{order:2}.day .lo{order:3;text-align:right}.day .bar2{order:4;margin:0}.day .hi{order:5}.day .p{order:6;margin:0;text-align:right}
+ #sugg{right:0;top:58px}
+ #sugg div{padding:15px 16px}
+}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important}}
 </style>
 </head>
@@ -98,10 +115,10 @@ function fx(kind){
   const add=(c,st)=>{const d=document.createElement("div");d.className=c;Object.assign(d.style,st);el.appendChild(d)};
   const r=(a,b)=>a+Math.random()*(b-a);
   if(kind==="clear")add("sun",{});
-  const clouds={clear:2,cloud:6,rain:5,storm:6,snow:4,fog:7}[kind];
+  const clouds={clear:2,cloud:6,rain:5,storm:6,snow:4,fog:7}[kind]-(innerWidth<600?1:0);
   for(let i=0;i<clouds;i++)add("cloud",{top:r(2,45)+"vh",animationDuration:r(40,90)+"s",animationDelay:-r(0,80)+"s",opacity:kind==="storm"||kind==="rain"?.35:.55,transform:"scale("+r(.8,1.6)+")"});
-  if(kind==="rain"||kind==="storm")for(let i=0;i<80;i++)add("drop",{left:r(0,100)+"vw",animationDuration:r(.5,1.1)+"s",animationDelay:-r(0,2)+"s"});
-  if(kind==="snow")for(let i=0;i<50;i++)add("flake",{left:r(0,100)+"vw",animationDuration:r(5,11)+"s",animationDelay:-r(0,10)+"s",width:r(4,9)+"px",height:r(4,9)+"px"});
+  if(kind==="rain"||kind==="storm")for(let i=0;i<(innerWidth<600?35:80);i++)add("drop",{left:r(0,100)+"vw",animationDuration:r(.5,1.1)+"s",animationDelay:-r(0,2)+"s"});
+  if(kind==="snow")for(let i=0;i<(innerWidth<600?24:50);i++)add("flake",{left:r(0,100)+"vw",animationDuration:r(5,11)+"s",animationDelay:-r(0,10)+"s",width:r(4,9)+"px",height:r(4,9)+"px"});
   if(kind==="storm")add("flash",{});
 }
 
